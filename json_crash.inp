@@ -1,0 +1,17 @@
+clear 
+set verbose off
+
+string wd = "/home/at/git/json_gretl"	# adjust path
+
+string jfile = "@wd/ex3.json"
+string json_str = readfile(jfile)
+
+B = jsongetb(json_str, "/store/*" )
+
+eval B.store.book[1]			# grab 1st of the 4 bundles
+
+# Accessing the "price" works
+eval B.store.book[1].price
+
+# CRASH when accessing the 1st element (price)
+eval B.store.book[1][1]

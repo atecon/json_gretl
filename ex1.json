@@ -1,0 +1,22 @@
+{ "Model_A": {
+    "Features": [
+      { "reference": "LRM",
+        "name": "log_LRM_t",
+	      "mlags": [1,4],	
+        "operation": "log"
+      },
+      { "reference": "LRY",
+	      "name": "d_LRY",
+        "operation": "diff"
+      }
+    ],
+    "Settings": {
+      "seed_expr": "set seed 1234",
+      "horizon_expr": 10
+    },
+    "Est": {
+      "est_expr": "ols",
+      "option_expr": "--robust"
+    }
+  }
+}

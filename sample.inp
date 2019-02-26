@@ -1,0 +1,104 @@
+clear
+set verbose off
+
+string wd = "/home/at/git/json_gretl"	# adjust path
+
+# select example
+string runEX = "ex1"
+
+# read-in
+string jfile = "@wd/@runEX.json"
+string json_str = readfile(jfile)
+
+
+if runEX=="ex1"
+
+    open denmark.gdt -q --preserve
+
+    bundle B = jsongetb(json_str)#, "$.store")#.book[*].author")
+    eval B
+    eval B.Model_A
+    keys = getkeys(B.Model_A)
+    print keys
+
+    # settings
+    #==========
+    eval B.Model_A.Settings
+    # set horizon
+    if inbundle(B.Model_A.Settings, "horizon_expr")
+        scalar hor = B.Model_A.Settings.horizon_expr
+        set horizon hor
+    endif
+
+    # set seed
+    if inbundle(B.Model_A.Settings, "seed_expr")
+        string str = B.Model_A.Settings.seed_expr
+        @str
+    endif
+
+    # features
+    #==========
+    bundles f = null
+    f = B.Model_A.Features
+
+    # loop over features
+    loop i=1..nelem(f) -q
+        bundle b = f[i]
+        string ref = b.reference	# name of the series
+        string operation = b.operation
+        string name = b.name
+
+        # construct lag series
+        if inbundle(b, "mlags")
+            strings mlags = b.mlags		# gretl reads arrays only as string arrays!
+            loop j=1..nelem(mlags) -q
+                string vnam = sprintf("%s%s", name, mlags[j])	# new name
+                # conduct eventual transformation etc.
+                string do = sprintf("%s(%s)(-%s)", operation, ref, mlags[j])
+                series @vnam = @do
+            endloop
+
+        else
+            # only some transformation
+            string vnam = sprintf("%s", name)		# new name
+            # conduct transformation
+            string do = sprintf("%s(%s)", operation, ref)
+            series @vnam = @do
+        endif
+    endloop
+
+    # estimation
+    #======
+    eval B.Model_A.Est
+    string est_expr = B.Model_A.Est.est_expr
+    string option_expr = B.Model_A.Est.option_expr
+
+    # run estimation
+    @est_expr LRM 0 d_LRY @option_expr
+
+
+
+
+elif runEX=="ex2"
+    check = 0
+    out = jsonget(json_str, "$.store.book[*].author", &check)
+    print out
+    eval typestr(typeof(out))
+
+    bundle b = jsongetb(json_str)#, "$.store")#.book[*].author")
+    eval b
+
+    B = jsongetb(json_str, "/store/*" )
+    eval B
+    eval B.store					# constaints 1 bundle (bicycle) and 1 bundles (book)
+    eval B.store.book				# contains 4 bundles
+    eval B.store.book[1]			# grab 1st of the 4 bundles
+    eval getkeys(B.store.book[1])	# print name of elements in the bundle
+
+    loop i=1..nelem(getkeys(B.store.book[1])) -q
+        print B.store.book[1][i]
+    endloop
+
+    eval B.store.book[1].price	# grab the price in the bundle
+
+endif
